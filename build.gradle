@@ -3161,17 +3161,19 @@ project(":swt") {
             // Skip copy if file is present.
             if (swtLib.exists()) return;
 
-            for (File f : configurations.compileClasspath.files) {
-                // Have to rename the swt jar because it is some platform specific name but
-                // for the sake of the IDEs we need to have a single stable name that works
-                // on every platform
-                copy {
-                    into libsDir
-                    from f.getParentFile()
-                    include "**/*swt*.jar"
-                    includeEmptyDirs = false
-                    rename ".*swt.*jar", "swt-debug\\.jar"
-                }
+            File swtJar = configurations.compileClasspath.files.find {
+                it.name == "${SWT_FILE_NAME}-.jar"
+            }
+            if (swtJar == null) {
+                throw new GradleException("Unable to locate SWT jar ${SWT_FILE_NAME}-.jar on the compile classpath")
+            }
+
+            // Copy only the SWT jar. The cache directory can also contain
+            // javadocs, which would otherwise be renamed to the same target name.
+            copy {
+                into libsDir
+                from swtJar
+                rename { "swt-debug.jar" }
             }
         }
     }
